@@ -6,12 +6,3 @@
 3. 點分享按鈕。
 4. 選「加入主畫面」。
 5. 之後即可像 App 一樣使用。
-
-## 本機測試
-可在此資料夾執行：
-python -m http.server 8080
-
-然後用瀏覽器開啟：
-http://localhost:8080
-
-注意：iPhone PWA 安裝與 service worker 通常需要 HTTPS。

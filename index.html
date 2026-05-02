@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="GaN HEMT" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="./icon-192.png" />
+  <title>GaN HEMT Simulator</title>
+  <style>
+    :root {
+      --bg: #0b1120;
+      --card: #111827;
+      --card2: #172033;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #38bdf8;
+      --accent2: #22c55e;
+      --danger: #f97316;
+      --border: rgba(255,255,255,.10);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+      background: radial-gradient(circle at top, #172554 0%, var(--bg) 42%, #020617 100%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: env(safe-area-inset-top) 14px env(safe-area-inset-bottom);
+    }
+    .app { max-width: 440px; margin: 0 auto; padding: 18px 0 32px; }
+    .header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 16px;
+    }
+    .eyebrow { color: var(--accent); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { margin: 6px 0 4px; font-size: 28px; line-height: 1.1; }
+    .desc { color: var(--muted); font-size: 14px; line-height: 1.7; margin: 0 0 16px; }
+    .logo {
+      width: 52px; height: 52px; border-radius: 18px;
+      background: linear-gradient(135deg, #38bdf8, #22c55e);
+      display: grid; place-items: center; color: #020617; font-weight: 900;
+      box-shadow: 0 16px 32px rgba(56,189,248,.25);
+    }
+    .tabs {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+      background: rgba(255,255,255,.06); border: 1px solid var(--border);
+      border-radius: 18px; padding: 6px; margin-bottom: 14px;
+    }
+    .tab {
+      border: 0; color: var(--muted); background: transparent; padding: 10px 6px;
+      border-radius: 14px; font-size: 14px; font-weight: 700;
+    }
+    .tab.active { background: var(--accent); color: #020617; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.035));
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 14px 34px rgba(0,0,0,.22);
+      backdrop-filter: blur(16px);
+    }
+    .section-title {
+      font-size: 17px; font-weight: 800; margin-bottom: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .cap-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+    .chip {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.05);
+      color: var(--text);
+      border-radius: 16px;
+      padding: 10px 6px;
+      font-weight: 700;
+    }
+    .chip.active { background: var(--accent2); color: #052e16; }
+    .control { margin: 18px 0; }
+    .control-head {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 14px; margin-bottom: 10px;
+    }
+    .value {
+      color: #020617; background: var(--accent); border-radius: 999px;
+      padding: 4px 10px; font-weight: 800; font-size: 12px;
+    }
+    input[type="range"] { width: 100%; accent-color: var(--accent); }
+    .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 7px; }
+    input[type="number"] {
+      width: 100%; background: rgba(255,255,255,.06); color: var(--text);
+      border: 1px solid var(--border); border-radius: 16px; padding: 12px;
+      font-size: 16px;
+    }
+    .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .metric {
+      background: rgba(255,255,255,.055);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 14px;
+    }
+    .metric-label { color: var(--muted); font-size: 12px; }
+    .metric-value { font-size: 25px; font-weight: 900; margin-top: 8px; }
+    .metric-unit { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .bar-bg { height: 9px; background: rgba(255,255,255,.09); border-radius: 999px; overflow: hidden; margin-top: 12px; }
+    .bar { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); width: 50%; }
+    .note { color: var(--muted); font-size: 12px; line-height: 1.7; margin-top: 12px; }
+    canvas { width: 100%; height: 230px; background: rgba(255,255,255,.03); border-radius: 18px; }
+    .btn {
+      width: 100%; border: 0; border-radius: 18px; padding: 14px 12px;
+      font-size: 15px; font-weight: 800; margin: 8px 0;
+      background: var(--accent); color: #020617;
+    }
+    .btn.secondary { background: rgba(255,255,255,.08); color: var(--text); border: 1px solid var(--border); }
+    .install-box {
+      border-left: 4px solid var(--accent);
+      padding: 12px;
+      background: rgba(56,189,248,.08);
+      border-radius: 14px;
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="header">
+      <div>
+        <div class="eyebrow">Mobile TCAD Companion</div>
+        <h1>GaN HEMT 模擬器</h1>
+      </div>
+      <div class="logo">GaN</div>
+    </div>
+    <p class="desc">快速評估 InAlGaN/GaN HEMT 的 2DEG、Vth、gm、fT 與 RF power 趨勢。此版本可安裝到 iPhone 主畫面作為 PWA 使用。</p>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="simulate">模擬</button>
+      <button class="tab" data-tab="sweep">掃描</button>
+      <button class="tab" data-tab="export">匯出</button>
+    </div>
+
+    <section id="simulate" class="panel active">
+      <div class="card">
+        <div class="section-title">▣ 結構設定</div>
+        <div class="cap-grid">
+          <button class="chip active" data-cap="SiN">SiN cap</button>
+          <button class="chip" data-cap="InGaN">InGaN cap</button>
+          <button class="chip" data-cap="InN">InN cap</button>
+        </div>
+
+        <div class="control">
+          <div class="control-head"><span>Al composition</span><span class="value" id="alVal">45 %</span></div>
+          <input id="al" type="range" min="20" max="65" step="1" value="45">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>In composition</span><span class="value" id="inVal">8 %</span></div>
+          <input id="indium" type="range" min="0" max="18" step="1" value="8">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Barrier thickness</span><span class="value" id="btVal">10 nm</span></div>
+          <input id="bt" type="range" min="4" max="18" step="0.5" value="10">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>AlN spacer thickness</span><span class="value" id="spVal">1.5 nm</span></div>
+          <input id="spacer" type="range" min="0" max="3" step="0.1" value="1.5">
+        </div>
+
+        <div class="input-row">
+          <div>
+            <label>Gate length, μm</label>
+            <input id="lg" type="number" step="0.01" value="0.15">
+          </div>
+          <div>
+            <label>Vds, V</label>
+            <input id="vds" type="number" step="1" value="20">
+          </div>
+        </div>
+      </div>
+
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">2DEG density</div><div class="metric-value" id="ns">--</div><div class="metric-unit">×10¹³ cm⁻²</div></div>
+        <div class="metric"><div class="metric-label">Vth</div><div class="metric-value" id="vth">--</div><div class="metric-unit">V</div></div>
+        <div class="metric"><div class="metric-label">gm,max</div><div class="metric-value" id="gm">--</div><div class="metric-unit">mS/mm</div></div>
+        <div class="metric"><div class="metric-label">fT</div><div class="metric-value" id="ft">--</div><div class="metric-unit">GHz</div></div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">RF power estimate <span class="value" id="pout">-- W/mm</span></div>
+        <div class="bar-bg"><div id="poutBar" class="bar"></div></div>
+        <p class="note">高 Al / In 極化可提升 2DEG，但也可能使 Vth 更負、DIBL 與 leakage 風險增加；實際模型需加入 Cgs/Cgd、Rc、buffer trap 與 self-heating。</p>
+      </div>
+    </section>
+
+    <section id="sweep" class="panel">
+      <div class="card">
+        <div class="section-title">Barrier thickness sweep：2DEG</div>
+        <canvas id="chartNs" width="390" height="230"></canvas>
+      </div>
+      <div class="card">
+        <div class="section-title">Barrier thickness sweep：gm</div>
+        <canvas id="chartGm" width="390" height="230"></canvas>
+      </div>
+    </section>
+
+    <section id="export" class="panel">
+      <div class="card">
+        <div class="section-title">匯出與串接</div>
+        <button class="btn" onclick="downloadCSV()">匯出 CSV 結果</button>
+        <button class="btn secondary" onclick="downloadDeck()">產生 Sentaurus Sweep Deck</button>
+        <button class="btn secondary" onclick="downloadPython()">匯出 Python Plot Script</button>
+        <div class="install-box">
+          iPhone 安裝方式：用 Safari 開啟此 PWA 網址 → 分享 → 加入主畫面。之後就可以像 App 一樣從桌面啟動。
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    let capType = "SiN";
+
+    const $ = (id) => document.getElementById(id);
+
+    function values() {
+      return {
+        al: Number($("al").value),
+        indium: Number($("indium").value),
+        bt: Number($("bt").value),
+        spacer: Number($("spacer").value),
+        lg: Number($("lg").value),
+        vds: Number($("vds").value),
+        cap: capType
+      };
+    }
+
+    function calc(v = values()) {
+      const capBoost = v.cap === "InN" ? 0.28 : v.cap === "InGaN" ? 0.18 : 0.08;
+      const polarizationBoost = v.al * 0.018 + v.indium * 0.012;
+      const thicknessPenalty = Math.max(0, (12 - v.bt) * 0.035);
+      const spacerBoost = v.spacer > 0 ? 0.22 * Math.exp(-Math.abs(v.spacer - 1.2)) : 0;
+
+      const ns = 0.75 + polarizationBoost + spacerBoost + capBoost - thicknessPenalty;
+      const gm = 260 + v.al * 3.2 + v.indium * 2.5 - v.lg * 210 + spacerBoost * 70;
+      const vth = -1.1 - v.al * 0.045 - v.indium * 0.02 - capBoost * 0.9;
+      const ft = Math.max(8, gm / 8.2 / (v.lg / 0.15));
+      const pout = Math.max(0.4, 0.08 * v.vds + ns * 0.45);
+
+      return { ns, gm, vth, ft, pout };
+    }
+
+    function update() {
+      const v = values();
+      $("alVal").textContent = `${v.al} %`;
+      $("inVal").textContent = `${v.indium} %`;
+      $("btVal").textContent = `${v.bt} nm`;
+      $("spVal").textContent = `${v.spacer.toFixed(1)} nm`;
+
+      const r = calc(v);
+      $("ns").textContent = r.ns.toFixed(2);
+      $("vth").textContent = r.vth.toFixed(2);
+      $("gm").textContent = Math.round(r.gm);
+      $("ft").textContent = r.ft.toFixed(1);
+      $("pout").textContent = `${r.pout.toFixed(2)} W/mm`;
+      $("poutBar").style.width = `${Math.min(100, r.pout * 26)}%`;
+      drawCharts();
+    }
+
+    function sweepData() {
+      const v = values();
+      const data = [];
+      for (let t = 4; t <= 12; t += 1) {
+        const r = calc({ ...v, bt: t });
+        data.push({ t, ns: Number(r.ns.toFixed(2)), gm: Math.round(r.gm) });
+      }
+      return data;
+    }
+
+    function drawLine(canvasId, key, label) {
+      const canvas = $(canvasId);
+      const ctx = canvas.getContext("2d");
+      const data = sweepData();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const pad = 36;
+      const w = canvas.width - pad * 2;
+      const h = canvas.height - pad * 2;
+      const ys = data.map(d => d[key]);
+      const minY = Math.min(...ys) * 0.96;
+      const maxY = Math.max(...ys) * 1.04;
+
+      ctx.strokeStyle = "rgba(255,255,255,.22)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(pad, pad);
+      ctx.lineTo(pad, pad + h);
+      ctx.lineTo(pad + w, pad + h);
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(229,231,235,.75)";
+      ctx.font = "12px -apple-system";
+      ctx.fillText(label, pad, 18);
+      ctx.fillText("4 nm", pad, pad + h + 20);
+      ctx.fillText("12 nm", pad + w - 35, pad + h + 20);
+
+      ctx.strokeStyle = "#38bdf8";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      data.forEach((d, i) => {
+        const x = pad + (i / (data.length - 1)) * w;
+        const y = pad + h - ((d[key] - minY) / (maxY - minY)) * h;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+
+      ctx.fillStyle = "#22c55e";
+      data.forEach((d, i) => {
+        const x = pad + (i / (data.length - 1)) * w;
+        const y = pad + h - ((d[key] - minY) / (maxY - minY)) * h;
+        ctx.beginPath();
+        ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function drawCharts() {
+      drawLine("chartNs", "ns", "2DEG density ×10¹³ cm⁻²");
+      drawLine("chartGm", "gm", "gm,max mS/mm");
+    }
+
+    function download(name, content, type = "text/plain") {
+      const blob = new Blob([content], { type });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function downloadCSV() {
+      const v = values(), r = calc(v);
+      const csv = [
+        "parameter,value,unit",
+        `cap,${v.cap},`,
+        `Al composition,${v.al},%`,
+        `In composition,${v.indium},%`,
+        `Barrier thickness,${v.bt},nm`,
+        `AlN spacer,${v.spacer},nm`,
+        `Gate length,${v.lg},um`,
+        `Vds,${v.vds},V`,
+        `2DEG,${r.ns.toFixed(3)},1e13 cm^-2`,
+        `Vth,${r.vth.toFixed(3)},V`,
+        `gm,${Math.round(r.gm)},mS/mm`,
+        `fT,${r.ft.toFixed(2)},GHz`,
+        `Pout,${r.pout.toFixed(2)},W/mm`
+      ].join("\n");
+      download("gan_hemt_result.csv", csv, "text/csv");
+    }
+
+    function downloadDeck() {
+      const v = values();
+      const deck = `# Sentaurus sweep template - GaN HEMT PWA export
+set AlComposition ${v.al/100}
+set InComposition ${v.indium/100}
+set BarrierThickness_nm ${v.bt}
+set AlNSpacer_nm ${v.spacer}
+set CapType ${v.cap}
+set GateLength_um ${v.lg}
+set Vds ${v.vds}
+
+# TODO:
+# 1. Map composition to material parameter database
+# 2. Include polarization model
+# 3. Add trap/self-heating/RF extraction flow
+`;
+      download("gan_hemt_sdevice_template.cmd", deck);
+    }
+
+    function downloadPython() {
+      const script = `import pandas as pd
+import matplotlib.pyplot as plt
+
+df = pd.read_csv("gan_hemt_result.csv")
+print(df)
+
+# Extend this script for Sentaurus sweep plotting
+`;
+      download("plot_gan_hemt.py", script);
+    }
+
+    document.querySelectorAll(".tab").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+        btn.classList.add("active");
+        $(btn.dataset.tab).classList.add("active");
+        drawCharts();
+      });
+    });
+
+    document.querySelectorAll(".chip").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".chip").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        capType = btn.dataset.cap;
+        update();
+      });
+    });
+
+    ["al", "indium", "bt", "spacer", "lg", "vds"].forEach(id => {
+      $(id).addEventListener("input", update);
+    });
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js"));
+    }
+
+    update();
+  </script>
+</body>
+</html>
